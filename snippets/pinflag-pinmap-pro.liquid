@@ -1,0 +1,675 @@
+{%- comment-%}
+	PINMAP PRO V1 SHOPIFY
+    <button type="button" class="pinflag-pinmap-btn cart__checkout-button button" id="pmp-v1-btn" style="width: 100%; margin: 0 auto; margin-top: 10px; background: blue; color: #fff">
+      {% render 'pinflag-btn-spinner' %} 
+      Pinmap Pro v1
+    </button>
+{%- endcomment-%}
+
+{%  assign pinflag_token = "e4cd3351-d948-4ce9-a0b2-eca459310c00" %}
+
+ <div class="pmp-v1-modal--overlay" id="pmp-v1-modal">
+    <div class="pmp-v1-modal--content">
+        <button type="button" class="pmp-v1-modal--close" id="pmp-v1--close">
+          <svg height="20px" id="pmp-v1--close" style="enable-background:new 0 0 512 512;" version="1.1" fill="rgb(255 255 255)" viewBox="0 0 512 512" width="20px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path id="pmp-v1--close" d="M443.6,387.1L312.4,255.4l131.5-130c5.4-5.4,5.4-14.2,0-19.6l-37.4-37.6c-2.6-2.6-6.1-4-9.8-4c-3.7,0-7.2,1.5-9.8,4  L256,197.8L124.9,68.3c-2.6-2.6-6.1-4-9.8-4c-3.7,0-7.2,1.5-9.8,4L68,105.9c-5.4,5.4-5.4,14.2,0,19.6l131.5,130L68.4,387.1  c-2.6,2.6-4.1,6.1-4.1,9.8c0,3.7,1.4,7.2,4.1,9.8l37.4,37.6c2.7,2.7,6.2,4.1,9.8,4.1c3.5,0,7.1-1.3,9.8-4.1L256,313.1l130.7,131.1  c2.7,2.7,6.2,4.1,9.8,4.1c3.5,0,7.1-1.3,9.8-4.1l37.4-37.6c2.6-2.6,4.1-6.1,4.1-9.8C447.7,393.2,446.2,389.7,443.6,387.1z"/></svg>
+        </button>
+        <iframe id="pinflag-pinmap-pro-v2" src="https://599b-190-215-118-90.ngrok-free.app/?token={{ pinflag_token }}" scrolling="no" allow="geolocation" style="display: none"></iframe> 
+        <iframe id="pinflag-pinmap-pro-v1" src="https://pinmap-pro-v1-qa.netlify.app/?token={{pinflag_token}}" scrolling="no" allow="geolocation"></iframe>
+        <span class="pinflag-attribution">Powered by <a href="https://pinflag.cl" target="_blank" style="color: white; text-decoration: none"><b>Pinflag</b></a></span> 
+    </div>
+ </div>
+
+ <script>
+
+  const pmpButtonIdv1 = 'pmp-v1-btn'
+	const pmpIframeIdv1 = 'pinflag-pinmap-pro-v1'
+	const pmpButtonIdv1Modal = 'pmp-v1-btn-modal'
+	const pmpModalOverlayClassv1 = '.pmp-v1-modal--overlay'
+	const pmpCloseButtonIdv1 = 'pmp-v1--close'
+	const LIMIT_GET_URL = 13
+	const LIMIT_CHECK = 10
+	
+	localStorage?.setItem('pmpV1IsIframeLoaded', 'not loaded')
+	localStorage?.setItem('availableCheckoutPinmap', 'loading')
+
+  function enableButtons() {
+    
+    const intervalButtonCheckout = setInterval(() => {
+      const isLoadedButton = !!document.querySelector(`#${pmpButtonIdv1} > .lds-ring`)
+      const isLoadedPinmap = localStorage?.getItem('availableCheckoutPinmap') !== 'loading'
+      if (isLoadedButton && isLoadedPinmap) {
+        const buttons = document.querySelectorAll(`button.pinflag-pinmap-btn`);
+        buttons.forEach(button => button.removeAttribute('disabled'));
+        const loaders = document.querySelectorAll(`#${pmpButtonIdv1} > .lds-ring`)
+        loaders.forEach(loader => loader.style.display = 'none')
+      }
+    }, 1000)
+  }
+
+  const doesHttpOnlyCookieExist = (cookiename) => {
+    const d = new Date();
+    d.setTime(d.getTime() + (1000));
+    const expires = 'expires=' + d.toUTCString();
+  
+    document.cookie = cookiename + '=new_value;path=/;' + expires;
+    return document.cookie.indexOf(cookiename + '=') == -1;
+  }
+
+  const validateCartCookie = () => {
+    const cookies = document.cookie.split(';');
+    const cartCookie = cookies.filter((cookie) => cookie.includes('cart='))[0]
+    if (cartCookie) {
+      const cartValue = cartCookie.split('=')[1]
+      if (doesHttpOnlyCookieExist('checkout_session_token__cn__' + cartValue)) {
+        document.cookie = 'cart='
+        window.location.reload()
+      }
+    }
+  }
+	
+	document.addEventListener('DOMContentLoaded', function () {
+      validateCartCookie()
+	  enableButtons() 
+
+      const checkPaymentComplete = async () => {
+        for (let index = 0; index < LIMIT_CHECK; index++) {
+          try {
+            if (localStorage.getItem('pinflagCustomer')) {
+              const pinflagCustomer = localStorage.getItem('pinflagCustomer').split('--pinflag--')
+              const response = await axios.get(
+                `https://cms-api.pinflag.cl/shopify/order-status-url?pinflagApiKey={{pinflag_token}}&email=${pinflagCustomer[0]}`
+              )
+              pinflagCustomer.slice(1).forEach(cookie => document.cookie = cookie)
+              await axios.delete(`https://cms-api.pinflag.cl/shopify/order-status?pinflagApiKey={{pinflag_token}}&email=${pinflagCustomer[0]}`)
+              localStorage.removeItem('pinflagCustomer')
+              window.location.replace(response.data.orderStatusUrl)
+              break
+            } else {
+              break
+            }
+          } catch (error) {
+            console.error(error)
+          }
+          const timeout = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+          await timeout(500)
+        }
+        localStorage.removeItem('pinflagCustomer')
+      }
+
+      checkPaymentComplete()
+
+	  const loggedIn = !!'{{ customer }}'
+	  const customerData = loggedIn
+	    ? {
+	        names: `${'{{ customer.first_name }}'} ${'{{ customer.last_name }}'}`,
+	        email: `${'{{ customer.email }}'}`,
+	        phone: `${'{{ customer.addresses[0].phone }}'}`,
+	        rut: '',
+	        userAddress: `${'{{ customer.addresses[0].address1 }}'}`,
+	        aditionalInfo: `${'{{ customer.addresses[0].address2 }}'}`,
+	        region: `${'{{ customer.addresses[0].province }}'}`,
+	        district: `${'{{ customer.addresses[0].city }}'}`
+	
+	      }
+	    : {}
+	
+		  function sendCartData (payload) {
+		    const pinmap = document.getElementById(pmpIframeIdv1)
+		    pinmap.contentWindow.postMessage({
+		      type: 'receive-cart-info',
+		      origin: window.location.host,
+		      message: { ...payload, cms: 'shopify', currentUrl: window.location.href, loggedIn, customerData },
+		      cms: 'shopify'
+		    }, '*')
+		  }
+	
+	  function getPinmapProCheckoutId () {
+	    const checkoutId = localStorage.getItem('pinmapProCheckoutId')
+	    return checkoutId
+	  }
+
+	  function setPinmapProCheckoutId (id) {
+	    if (!id) return
+	    localStorage?.setItem('pinmapProCheckoutId', id)
+	  }
+	
+	  function getCartData () {
+	    return axios(`${window.location.origin}/cart.js`)
+	  }
+	
+	  function deleteAllCookies () {
+	    console.log('Eliminando cookies...')
+	
+	    const cookies = document.cookie.split(';')
+	
+	    for (let i = 0; i < cookies.length; i++) {
+	      const cookie = cookies[i]
+	      const eqPos = cookie.indexOf('=')
+	      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie
+	      console.log('-', name, '-')
+	      document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=.' + document.domain + '; path=/'
+	    }
+	  }
+
+	  function deleteHttpOnlyCookie (name) {
+	    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/'
+	    document.cookie = name + '=deleted; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/; domain=' + document.domain + ';'
+	    document.cookie = name + '=deleted; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/; domain=.' + document.domain + ';'
+	  }
+          
+  function deleteCookie(name) {
+    const cookies = document.cookie.split(";");
+
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i];
+      const eqPos = cookie.indexOf("=");
+      const cookieName = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie;
+      if (cookieName.includes(name)){
+        document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT; domain=" + document.domain + "; path=/";
+        document.cookie = cookieName + '=expires; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/; domain=.' + document.domain + ';'
+      }
+    }
+  }
+	
+	  function redirectToCheckoutScrapper (checkoutData) {
+	    let url
+	    let cookies
+	    if (typeof checkoutData === 'object') {
+          url = checkoutData.permalink
+          deleteCookie('checkout_session_token')
+          deleteCookie('checkout_session_lookup')
+          deleteCookie('queue_token')
+          
+          cookies = checkoutData.cookies
+          console.log('cookies :0', document.cookie)
+          const pinflagCustomerCookies = [checkoutData.email]
+          cookies.map(cookie => {
+            var eqPos = cookie.indexOf("=");
+            var cookieName = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            if (!document.cookie.includes(`${cookieName}=`) && !cookieName.includes('cart')) {
+              if (cookie.includes('httpOnly')) {
+                cookie = cookie.slice(0, -10)
+              }
+              console.log('cookie updated', cookie)
+              if (url.includes('thank_you')) {
+                document.cookie = cookie
+              } else {
+                pinflagCustomerCookies.push(cookie)
+              }
+            }
+          })
+          localStorage.setItem('pinflagCustomer', pinflagCustomerCookies.join('--pinflag--'))
+        } else {
+	      url = checkoutData
+	    }
+        
+	    console.log({ url, cookies })
+        window.location.href = url
+	  }
+
+      const saveCartTotal = async (properties) => {
+        try {
+          await axios.post(window.Shopify.routes.root + 'cart/change.js', {
+            line: 1,
+            properties
+          })
+        } catch (error) {
+          console.log('error', error)
+        }
+      }
+
+	  const redirectToCheckout = async (urlShopify) => {
+        if (urlShopify.propertiesFirstItem) await saveCartTotal(urlShopify.propertiesFirstItem)
+	    if (urlShopify.email) {
+	      redirectToCheckoutScrapper(urlShopify)
+	      return
+	    }
+	    const correctUrl = new URL(urlShopify)
+	    correctUrl.hostname = window.location.host
+	    const url = correctUrl.href
+	
+	    let limit = 0
+	    const fetchUrl = () => {
+	      fetch(url)
+	        .then(res => res.text())
+	        .then(res => {
+	          if (res.includes('<!DOCTYPE html>')) {
+	            window.location.replace(url)
+	            clearInterval(interval)
+	          }
+	          if (limit === LIMIT_GET_URL) {
+	            window.location.replace('/checkout')
+	            clearInterval(interval)
+	          }
+	        })
+	        .catch(err => {
+	          window.location.replace('/checkout')
+	          console.error(err)
+	        })
+	      limit += 1
+	    }
+	    const interval = setInterval(fetchUrl, 1500)
+	    fetchUrl()
+	  }
+	
+	  function iframeLoaded(isCorrect){
+        localStorage?.setItem('availableCheckoutPinmap', isCorrect)
+          if (!isCorrect) {
+          localStorage?.setItem('pmpV1IsIframeLoaded', 'not loaded')
+        } else {
+          localStorage?.setItem('pmpV1IsIframeLoaded', 'loaded')
+        }
+      }
+	
+	  function removeIframe () {
+	    localStorage?.setItem('pmpV1IsIframeLoaded', 'not loaded')
+	    window.location.replace('/checkout')
+	  }
+	
+	  function redirectToHome () {
+	    window.location.replace('/')
+	  }
+	
+	  function redirectToCart () {
+	    window.location.replace('/cart')
+	  }
+
+	  function pushFormEvent () {
+	    window.dataLayer = window.dataLayer || []
+	    dataLayer.push({
+	      pinmap_user_info_filled: true,
+	      event: 'pinmap_user_info_filled'
+	    })
+	  }
+	
+	  function pushPayEvent () {
+	    window.dataLayer = window.dataLayer || []
+	    dataLayer.push({
+	      pinmap_go_to_pay: true,
+	      event: 'pinmap_go_to_pay'
+	    })
+	  }
+
+      function closePinmap() {
+        document.querySelector(pmpModalOverlayClassv1).classList.remove('overlay--active')
+        document.querySelector('body').style.overflow = 'auto'
+        checkAbandonedCheckoutCookie();
+      }
+
+      // author: rosita
+      // se hace update de las cantidades de lo productos del cart
+      const updateCart = async (data) => {
+        const { key, quantity } = data
+        axios.post(window.Shopify.routes.root + 'cart/change.js', {
+          id: key.toString(),
+          quantity
+        }).then(res => {
+          sendUpdatedCartInfo(res.data, key)
+  	  }).catch((err) => {
+          console.log('error', err)
+          sendUpdatedCartInfo(err.response.data, key)
+        })
+      }
+  
+      const sendUpdatedCartInfo = (data, key) => {
+        const pinmap = document.getElementById(pmpIframeIdv1)
+        if (data.status) {
+          pinmap.contentWindow.postMessage({
+            type: "update-info-cart",
+            origin: window.location.host,
+            message: { error: data.message },
+            cms: 'shopify'
+          }, '*')
+        } else {
+            pinmap.contentWindow.postMessage({
+              type: "update-info-cart",
+              origin: window.location.host,
+              message: data,
+              cms: 'shopify'
+            }, '*')
+          }
+      }
+
+      const setABTestCookie = () => {
+        document.cookie = 'checkout_origin=pinmap pro;path=/'
+      }
+
+	  function messageHandler (eventMessage) {
+	    if (eventMessage.type === 'receive-checkout-id') {
+	      return setPinmapProCheckoutId(eventMessage.message)
+	    }
+	    if (eventMessage.type === 'redirect-to-checkout') {
+	      return redirectToCheckout(eventMessage.message)
+	    }
+	    if (eventMessage.type === 'iframe-loaded') {
+	      return iframeLoaded(eventMessage.message)
+	    }
+	    if (eventMessage.type === 'remove-iframe') {
+	      return removeIframe()
+	    }
+	    if (eventMessage.type === 'redirect-to-home') {
+	      return redirectToHome()
+	    }
+	    if (eventMessage.type === 'redirect-to-cart') {
+	      return redirectToCart()
+	    }
+	    if (eventMessage.type === 'ga-event-step1') {
+	      return pushFormEvent()
+	    }
+	    if (eventMessage.type === 'ga-event-go-payment') {
+          setABTestCookie()
+	      return pushPayEvent()
+	    }
+        if(eventMessage.type === 'close-iframe') {
+          return closePinmap()
+        }
+        if (eventMessage.type === 'update-cart') {
+          return updateCart(eventMessage.message)
+        }
+	  }
+
+      const getCookies = () => {
+        const cookies = document.cookie.split(';')
+          .filter(cookie => !cookie.includes('checkout') && !cookie.includes('queue'))
+          .map(cookie => {
+            const [name, value] = cookie.split('=').map(c => c.trim());
+            return { name, value }
+          });
+        console.log('cookies', cookies)
+        return cookies
+      }
+
+	  const updateHeaderSection = (header) => {
+	    const headerSection = document.getElementsByClassName('site-header')[0]
+	    const newHeaderSection = document.createElement('div')
+	    newHeaderSection.innerHTML = header
+	    headerSection.parentNode.replaceChild(newHeaderSection, headerSection)
+	  }
+	
+	  const displayPinmap = async () => {
+	    if (localStorage?.getItem('pmpV1IsIframeLoaded') === 'not loaded') {
+	      return window.location.replace('/checkout')
+	    }
+	    const body = document.querySelector('body')
+	    const logoUrl = document.querySelector('header > a > img')?.src
+	    getCartData()
+	      .then(res => {
+            console.log('res cart', res.data)
+            const totalWeight = res.data.total_weight
+	        sendCartData({ cartItems: res?.data?.items, cartToken: res?.data?.token, checkoutId: getPinmapProCheckoutId(), logoUrl, totalWeight, cookies: getCookies() })
+	        body.style.overflow = 'hidden'
+	        document.querySelector(`${pmpModalOverlayClassv1}`).classList.add('overlay--active')
+	      })
+	      .catch(err => {
+	        removeIframe()
+	        console.log(err)
+	      })
+	  }
+
+	  const addToCart = () => {
+	    const $ = jQuery
+	
+	    const formParams = $('form[action$="/cart/add"]').serialize() + '&sections=header'
+	    $.ajax({
+	      url: '/cart/add.js',
+	      type: 'post',
+	      data: formParams,
+	      dataType: 'json',
+	      success: function (response) {
+	        displayPinmap()
+	      },
+	      error: function (response) {
+	        console.log('error', response)
+	      }
+	    })
+	  }
+
+	  document.addEventListener('click', function (e) {
+	    const body = document.querySelector('body')
+	    if (e.target && (e.target.id === pmpButtonIdv1 || e.target.id === pmpButtonIdv1Modal)) {
+	      e.preventDefault()
+          console.log('cookies', document.cookie)
+	      if (e.target.dataset.btn === 'quick-buy') {
+	        addToCart()
+	      } else {
+	        displayPinmap()
+	      }
+	    } else {
+	      console.log('else')
+	    }
+	    if (e.target && e.target.id === pmpCloseButtonIdv1) {
+	      closePinmap()
+	    }
+	  })
+
+	  window.addEventListener('message', function (event) {
+	    if (event.data.origin !== 'pinflag-shopify-pinmap-pro') return
+	    return messageHandler(event.data)
+	  })
+	}, false)
+
+	// Add focus on current window
+	window.focus()
+	
+	// When click on iframe the focus change and we are listen this
+	const listener = window.addEventListener('blur', function () {
+	  // if the current focus is on your iFrame (you can use any css or js selector here)
+	  if (document.activeElement === document.getElementById('pinflag-pinmap-pro-v1')) {
+	    // Add to dataLayer your information
+	    window.dataLayer = window.dataLayer || []
+	    window.dataLayer.push({
+	      opened_pinmap: true,
+	      event: 'opened_pinmap'
+	    })
+	  }
+	
+	  // Remove listener
+	  window.removeEventListener('blur', listener)
+	})
+
+   window.addEventListener('beforeunload', function () {
+    let pinmap = document.getElementById(pmpIframeIdv1)
+    pinmap.contentWindow.postMessage({
+			type: "close-pinmap",
+			origin: window.location.host,
+      cms: 'shopify'
+		}, '*');
+  });
+
+
+  function checkAbandonedCheckoutCookie() {
+    var cookies = document.cookie.split(';')
+    var abandonedCheckoutCookieExists = false
+      
+    for (var i = 0; i < cookies.length; i++) {
+      var cookie = cookies[i].trim();
+  
+      if (cookie.indexOf('abandonedCheckout=true') === 0) {
+        abandonedCheckoutCookieExists = true;
+        break;
+      }
+    }
+      
+    if (!abandonedCheckoutCookieExists) {
+      let pinmap = document.getElementById(pmpIframeIdv1)
+      pinmap.contentWindow.postMessage({
+				type: "close-pinmap",
+				origin: window.location.host,
+        cms: 'shopify'
+			}, '*');
+
+      var now = new Date();
+      var expirationDate = new Date(now.getTime() + 30 * 60 * 1000) // Expires in 30 minutes
+      document.cookie = 'abandonedCheckout=true; expires=' + expirationDate.toUTCString() + '; path=/'
+    }
+  }
+
+</script>
+
+<style>
+/*============================================================================
+  # Pinflag Styles
+==============================================================================*/
+
+.pmp-v1-modal--overlay{
+  transition: opacity 0.2s ease-out;
+  background: rgba(0,0,0,.4);
+  position: fixed;
+  opacity: 0;
+  bottom: -10%;
+  right: 0;
+  left: 0;
+  top: -10%;
+  visibility: hidden;
+  z-index: 10000000;
+  transition: visibility 0s, opacity 0.2s linear;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items:center;
+}
+
+.overlay--active{
+  opacity: 1;
+  visibility: visible;
+  overflow: hidden !important;
+}
+
+.pmp-v1-modal--content{
+  position: relative;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  min-width: 850px;
+  min-height: 580px;
+  height: auto;
+  background: #fff;
+  position: relative;
+  border-radius: 1rem;
+  z-index: 999;
+  transition: all .05s ease-in;
+}
+
+@media screen and (max-width:750px) {
+  .pmp-v1-modal--content{
+    position: initial;
+  }
+  .pmp-v1-modal--overlay{
+    top: -2%;
+    background-color: white;
+   }
+  #pinmap-pro-close{
+    display: none;
+  }
+}
+
+.iframe-pinflag {
+	border: none;
+  border-radius: 1rem;
+}
+
+.pmp-v1-modal--close{
+  position: absolute;
+  top: -30px;
+  right: 0;
+  background-color: transparent;
+  border: none;
+  width: auto!important;
+  cursor: pointer;
+}
+  
+.lds-ring {
+  display: inline-block;
+  position: relative;
+  width: 40px;
+  height: 20px;
+}
+.lds-ring div {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  border-color: #fff transparent transparent transparent;
+}
+.lds-ring div:nth-child(1) {
+  animation-delay: -0.45s;
+}
+.lds-ring div:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.lds-ring div:nth-child(3) {
+  animation-delay: -0.15s;
+}
+  
+#pinflag-pinmap-pro-v1{
+	position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 1rem;
+}
+
+  
+@keyframes lds-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+  
+@media screen and (max-width: 910px){
+  .pinflag-modal--content, .pinmap-modal--content, .pmp-modal--content{
+    position: fixed;
+    width: 103vw;
+    height: 103vh;
+    top: -5px;
+    bottom: 0;
+    right: 0px;
+    left: -5px;
+    background: #fff;
+    z-index: 999;
+    overflow: hidden;
+    border-radius: 0 !important;
+  }
+  .pinflag-modal--close, .pinmap-modal--close, .pmp-modal--close{
+    top: 20px;
+    right: 20px;
+  }
+  
+}
+
+ @media screen and (min-width: 750px){
+  .cart__footer > * {
+      width: 55rem !important;
+  }
+ }
+
+.pinflag-attribution{
+  color: #fff;
+  position: absolute;
+  bottom: -30px;
+  right: 0px;
+}
+
+.shopify-payment-button__button--unbranded {
+  width: 100%;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.ajax-cart__list {
+  max-height: 60vh;
+  overflow: scroll;
+}
+</style>

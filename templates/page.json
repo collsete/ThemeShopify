@@ -1,0 +1,12 @@
+{
+  "sections": {
+    "main": {
+      "type": "nov-page-default",
+      "settings": {
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

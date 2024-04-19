@@ -1,0 +1,109 @@
+{
+  "sections": {
+    "main": {
+      "type": "nov-page-default",
+      "disabled": true,
+      "settings": {
+      }
+    },
+    "6591b251-95ec-431e-a07b-2303826e07d7": {
+      "type": "nov-gallery-image",
+      "blocks": {
+        "template--16219342962896__6591b251-95ec-431e-a07b-2303826e07d7-image-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify:\/\/shop_images\/productos.png",
+            "cta_label": "+ de 2000 usos",
+            "cta_label2": "",
+            "btn_label": "CONOCER MÁS",
+            "s_cap": "style-1",
+            "link": "https:\/\/wd40.lat\/",
+            "class": ""
+          }
+        },
+        "template--16219342962896__6591b251-95ec-431e-a07b-2303826e07d7-image-2": {
+          "type": "image",
+          "settings": {
+            "image": "shopify:\/\/shop_images\/Cocina.png",
+            "cta_label": "",
+            "cta_label2": "",
+            "btn_label": "COMPRA PARA TU HOGAR",
+            "s_cap": "style-1",
+            "link": "shopify:\/\/collections\/wd-40-minorista",
+            "class": ""
+          }
+        }
+      },
+      "block_order": [
+        "template--16219342962896__6591b251-95ec-431e-a07b-2303826e07d7-image-1",
+        "template--16219342962896__6591b251-95ec-431e-a07b-2303826e07d7-image-2"
+      ],
+      "settings": {
+        "title": "",
+        "subheading": "",
+        "title_alignment": "text-center",
+        "bd_radius": 0,
+        "spacing": "0",
+        "style_img_1": false,
+        "style_img_2": false,
+        "background_color": "",
+        "has_fullwidth": true,
+        "class_section": "",
+        "distance_top": "30px",
+        "distance_bottom": "30px"
+      }
+    },
+    "28d85139-460d-4dee-bf88-7ad221f1507c": {
+      "type": "nov-gallery-image",
+      "blocks": {
+        "template--16219342962896__28d85139-460d-4dee-bf88-7ad221f1507c-image-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify:\/\/shop_images\/Ferreteria_f7077ecd-7380-43db-a5f0-1acc1f24eb9b.png",
+            "cta_label": "Que no falte en tu ferreteria",
+            "cta_label2": "",
+            "btn_label": "Comprar por cajas",
+            "s_cap": "style-1",
+            "link": "shopify:\/\/collections\/cajas",
+            "class": ""
+          }
+        },
+        "template--16219342962896__28d85139-460d-4dee-bf88-7ad221f1507c-image-2": {
+          "type": "image",
+          "settings": {
+            "image": "shopify:\/\/shop_images\/Camion.png",
+            "cta_label": "Pedidos de más de 1000 latas",
+            "cta_label2": "",
+            "btn_label": "COMPRA MAYORISTA",
+            "s_cap": "style-1",
+            "link": "shopify:\/\/pages\/cotizacion",
+            "class": ""
+          }
+        }
+      },
+      "block_order": [
+        "template--16219342962896__28d85139-460d-4dee-bf88-7ad221f1507c-image-1",
+        "template--16219342962896__28d85139-460d-4dee-bf88-7ad221f1507c-image-2"
+      ],
+      "settings": {
+        "title": "",
+        "subheading": "",
+        "title_alignment": "text-left",
+        "bd_radius": 0,
+        "spacing": "0",
+        "style_img_1": false,
+        "style_img_2": false,
+        "background_color": "",
+        "has_fullwidth": true,
+        "class_section": "",
+        "distance_top": "30px",
+        "distance_bottom": "30px"
+      }
+    }
+  },
+  "order": [
+    "main",
+    "6591b251-95ec-431e-a07b-2303826e07d7",
+    "28d85139-460d-4dee-bf88-7ad221f1507c"
+  ]
+}
